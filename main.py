@@ -64,7 +64,7 @@ class Yarn(object):
         issues = []
         for line in outputs_data:
             item = json.loads(line)
-            if item["type"] == "auditAdvisory":
+            if item.get("type", "") == "auditAdvisory":
                 issue = {
                     "column": 0,
                     "line": 0,
@@ -93,7 +93,7 @@ class Npm(object):
         self.source_dir = source_dir
 
         version = os.environ.get("NPM_VERSION", "v9.8.1")
-        self.old_version = True if version == "v6.14.16" else False
+        self.old_version = version == "v6.14.16"
 
     def check(self):
         lock_file = os.path.join(self.source_dir, self.lock_file)
@@ -142,6 +142,9 @@ class Npm(object):
 
         issues = []
         if self.old_version:
+            if "advisories" not in outputs_data:
+                print("[error] outputs: %s" % outputs_data)
+                return []
             for _, item in outputs_data["advisories"].items():
                 issue = {
                     "column": 0,
@@ -162,6 +165,9 @@ class Npm(object):
                 )
                 issues.append(issue)
         else:
+            if "vulnerabilities" not in outputs_data:
+                print("[error] outputs: %s" % outputs_data)
+                return []
             for _, item in outputs_data["vulnerabilities"].items():
                 issue = {
                     "column": 0,
